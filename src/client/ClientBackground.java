@@ -1,23 +1,51 @@
 package client;
 
+import util.ChatUtil;
+import util.FIleUtil;
+
+import javax.swing.*;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 
 public class ClientBackground {
 
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
-    private BufferedReader keyInput;
     private InetAddress ia;
 
-    private ClientGUI GUI;
+    private ClientGUI GUI; // GUI object
+
+    // GUI Part
+    JTextField field;
+    JTextArea chatArea;
+
+    //Security
+    private String clientPublicKey;
+    private String clientPrivateKey;
+    private String serverPublicKey;
+    private String chatKey;
 
 
     public void setGUI(ClientGUI GUI){
         this.GUI = GUI;
+    }
+
+    public void setSymmetricKey(String symmetricKey){
+        // It means that you can send your message after encrypt the message
+        this.chatKey = symmetricKey;
+        GUI.enableInputField();
+    }
+
+    public void setKeyPair() throws NoSuchAlgorithmException {
+        HashMap<String, String> clientKeyPair = FIleUtil.generateKeyPair();
+        clientPublicKey = clientKeyPair.get("publicKey");
+        clientPrivateKey = clientKeyPair.get("privateKey");
+        System.out.println("Client : Keypair is generated");
     }
 
     public void connect(){
@@ -25,15 +53,22 @@ public class ClientBackground {
             ia = InetAddress.getLocalHost(); // To connect to server address
             socket = new Socket(ia, 4444); // Server port is 4444
             System.out.println(socket.toString());
+            GUI.connect();
+
+            // Generate key using 'AES128' - symmetric key
+            setSymmetricKey(ChatUtil.generateKey());
 
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
 
-            out.writeUTF("HI, I'm client\n"); // initiate message
+            // Initial transfer - symmetric key
+            // For secure chatting
+            out.writeUTF(chatKey);
 
             while(in != null){
-                String message = in.readUTF();
-                GUI.appendMsg(message);
+                String cipherText = in.readUTF();
+                String message = ChatUtil.decryptMessage(cipherText, chatKey);
+                GUI.appendMSG(message);
             }
 
         }catch (ConnectException ce){
@@ -45,10 +80,16 @@ public class ClientBackground {
 
     public void sendMessage(String message){
         try{
-            out.writeUTF("Client : " + message);
-        } catch (IOException e) {
+            String encryptedMessage = ChatUtil.encryptMessage(message, chatKey);
+            out.writeUTF(encryptedMessage);
+        } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void sendPublicKey() throws IOException {
+        out.writeUTF(clientPublicKey);
+        System.out.println("Client : Send PublicKey");
     }
 
 //    public static void main(String[] args) {

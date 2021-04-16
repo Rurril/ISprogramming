@@ -9,7 +9,8 @@ import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 
-import util.SecurityUtil;
+import util.ChatUtil;
+import util.FIleUtil;
 
 public class ServerBackground extends JFrame implements ActionListener {
     private final static int SERVER_PORT = 4444;
@@ -31,19 +32,20 @@ public class ServerBackground extends JFrame implements ActionListener {
     private String serverPublicKey;
     private String serverPrivateKey;
     private String clientPublicKey;
+    private String chatKey;
 
     public void setGUI(ServerGUI GUI){
         this.GUI = GUI;
     }
 
-    public void setClientPublicKey(String clientPublicKey){
+    public void setSymmetricKey(String symmetricKey){
         // It means that you can send your message after encrypt the message
-        this.clientPublicKey = clientPublicKey;
+        this.chatKey = symmetricKey;
         GUI.enableInputField();
     }
 
     public void setKeyPair() throws NoSuchAlgorithmException {
-        HashMap<String, String> serverKeyPair = SecurityUtil.generateKeyPair();
+        HashMap<String, String> serverKeyPair = FIleUtil.generateKeyPair();
         serverPublicKey = serverKeyPair.get("publicKey");
         serverPrivateKey = serverKeyPair.get("privateKey");
         System.out.println("Server : Keypair is generated");
@@ -62,28 +64,26 @@ public class ServerBackground extends JFrame implements ActionListener {
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
 
-            // At first, must get publicKey from client.
-            String publicKey = in.readUTF();
-            setClientPublicKey(publicKey);
+            // At first, must get chatkey(symmetric key) from client.
+            String key = in.readUTF();
+            setSymmetricKey(key);
 
             String cipherText;
 
             while(in != null){
                 cipherText = in.readUTF();
-                System.out.println("===========Before Decrypt===========");
-                System.out.println("Ciphertext : " + cipherText);
 
-                // No private key -> means that you can not decrypt the message
-                if(serverPrivateKey.isEmpty())continue;
-
+                // No chatKey key -> means that you can not decrypt the message
+                if(chatKey.isEmpty()){
+                    System.out.println("Server : There is no chatkey");
+                    continue;
+                }
                 // Decrypt cipherText to plainText & Append to chat area
-                String plainText = SecurityUtil.decrypt(cipherText, serverPrivateKey);
+                String plainText = ChatUtil.decryptMessage(cipherText, chatKey);
                 GUI.appendMSG(plainText);
-                System.out.println("===========After Decrypt===========");
-                System.out.println("Plaintext : " + plainText);
             }
 
-        }catch (IOException | NoSuchAlgorithmException e){
+        }catch (Exception e){
             System.out.println(e);
         }
 
@@ -91,9 +91,9 @@ public class ServerBackground extends JFrame implements ActionListener {
 
     public void sendMessage(String message){
         try{
-            String encryptedMessage = SecurityUtil.encrypt(message, clientPublicKey);
+            String encryptedMessage = ChatUtil.encryptMessage(message, chatKey);
             out.writeUTF(encryptedMessage);
-        } catch (IOException | NoSuchAlgorithmException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
