@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.HashMap;
 
@@ -51,7 +52,7 @@ public class FIleUtil {
         byte[] bytePublicKey = Base64.getDecoder().decode(strPublicKey.getBytes());
         try{
             KeyFactory keyFactory = KeyFactory.getInstance(FILE_ALGORITHM);
-            return keyFactory.generatePublic(new PKCS8EncodedKeySpec(bytePublicKey));
+            return keyFactory.generatePublic(new X509EncodedKeySpec(bytePublicKey));
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         } catch (InvalidKeySpecException e) {
@@ -83,24 +84,30 @@ public class FIleUtil {
         }
     }
 
-
-//    public static boolean verify(String plainText, String signature, byte[] encodedPublicKey){
-//        PublicKey publicKey = this.generatePublicKey(encodedPublicKey);
-//
-//    }
-
-    private static boolean verifySignarue(String plainText, String signature, PublicKey publicKey) {
-        Signature sig;
-        try {
-            sig = Signature.getInstance(FILE_ALGORITHM);
-            sig.initVerify(publicKey);
-            sig.update(plainText.getBytes());
-            if (!sig.verify(Base64.getDecoder().decode(signature)))
-                throw new InvalidParameterException("It was awesome! Signature hasn't be invalid");
-        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+    public static String sign(String plainText, String priKey){
+        try{
+            PrivateKey privateKey = generatePrivateKey(priKey);
+            Signature signature = Signature.getInstance("SHA256withRSA");
+            signature.initSign(privateKey);
+            signature.update(plainText.getBytes("UTF-8"));
+            byte[] bSignature = signature.sign();
+            return Base64.getEncoder().encodeToString(bSignature);
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException | InvalidKeyException | SignatureException e) {
             throw new RuntimeException(e);
         }
-        return true;
+    }
+
+    public static boolean verifySignarue(String plainText, String signature, String pubKey) {
+        Signature sig;
+        try {
+            PublicKey publicKey = generatePublicKey(pubKey);
+            sig = Signature.getInstance("SHA256WithRSA");
+            sig.initVerify(publicKey);
+            sig.update(plainText.getBytes());
+            return sig.verify(Base64.getDecoder().decode(signature));
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+            return false;
+        }
     }
 
 

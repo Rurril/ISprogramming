@@ -30,7 +30,6 @@ public class ClientBackground {
     private String serverPublicKey;
     private String chatKey;
 
-
     public void setGUI(ClientGUI GUI){
         this.GUI = GUI;
     }
@@ -66,10 +65,44 @@ public class ClientBackground {
             out.writeUTF(chatKey);
 
             while(in != null){
-                String cipherText = in.readUTF();
-                String message = ChatUtil.decryptMessage(cipherText, chatKey);
-                GUI.appendMSG(message);
+
+                int type = in.readInt();
+                System.out.println("Type : " + type);
+                if(type == 1){ // CASE : MESSAGE
+
+                    String cipherText = in.readUTF();
+                    String message = ChatUtil.decryptMessage(cipherText, chatKey);
+                    GUI.appendMSG(message);
+
+                }else if(type == 2){ // CASE : FILE
+
+                    if(serverPublicKey.isEmpty())return;
+
+                    String signature = in.readUTF();
+                    boolean isVerified = FIleUtil.verifySignarue("JINKWANJEON", signature, serverPublicKey);
+                    System.out.println("Verify : " + isVerified);
+
+                    if(isVerified){
+                        String fileName = in.readUTF();
+                        FileOutputStream fout = new FileOutputStream("./clientFile/" + fileName);
+                        byte[] byteArray = new byte[1024*1024];
+                        int count = 0;
+                        System.out.println(fileName);
+
+                        while((count = in.read(byteArray)) > 0){
+                            fout.write(byteArray, 0, count);
+                        }
+                    }
+
+                }else if(type == 3){ // CASE : Server PublicKey
+                    serverPublicKey = in.readUTF();
+                    System.out.println("Server's public key : " + serverPublicKey);
+                }
+
             }
+
+//            Thread fileThread = new Thread(new ClientFileThread(socket, this));
+//            fileThread.start();
 
         }catch (ConnectException ce){
             ce.printStackTrace();

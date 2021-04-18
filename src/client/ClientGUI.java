@@ -24,7 +24,6 @@ public class ClientGUI extends JFrame implements ActionListener {
         cb = new ClientBackground();
         setTitle("CLIENT");
 
-
         chatArea = new JTextArea();
         chatArea.setEditable(false);
         inputField = new JTextField();

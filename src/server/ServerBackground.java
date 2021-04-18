@@ -1,8 +1,6 @@
 package server;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -12,21 +10,16 @@ import java.util.HashMap;
 import util.ChatUtil;
 import util.FIleUtil;
 
-public class ServerBackground extends JFrame implements ActionListener {
+public class ServerBackground {
     private final static int SERVER_PORT = 4444;
-    private final static String MESSAGE_TO_SERVER = "Hello, Client";
 
     private Socket socket;
     private ServerSocket serverSocket;
-    //    ServerThread serverThread;
-    private DataInputStream in;
+
+    // Data and File
     private DataOutputStream out;
-
+    private DataInputStream in;
     private ServerGUI GUI; // GUI object
-
-    // GUI Part
-    JTextField field;
-    JTextArea chatArea;
 
     //Security
     private String serverPublicKey;
@@ -64,7 +57,6 @@ public class ServerBackground extends JFrame implements ActionListener {
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
 
-            // At first, must get chatkey(symmetric key) from client.
             String key = in.readUTF();
             setSymmetricKey(key);
 
@@ -74,37 +66,73 @@ public class ServerBackground extends JFrame implements ActionListener {
                 cipherText = in.readUTF();
 
                 // No chatKey key -> means that you can not decrypt the message
-                if(chatKey.isEmpty()){
+                if(isEmptyChatKey()){
                     System.out.println("Server : There is no chatkey");
                     continue;
                 }
                 // Decrypt cipherText to plainText & Append to chat area
-                String plainText = ChatUtil.decryptMessage(cipherText, chatKey);
-                GUI.appendMSG(plainText);
+                appendMSG(cipherText);
             }
-
         }catch (Exception e){
             System.out.println(e);
         }
 
     }
 
+    public void sendFile(String path, String fileName){
+        try {
+            File file = new File(path);
+            InputStream fin = new FileInputStream(file);
+
+            // For sign and verify
+            if(serverPrivateKey.isEmpty())return;
+
+            String signature = FIleUtil.sign("JINKWANJEON", serverPrivateKey);
+            System.out.println("Signature : " + signature);
+
+            out.writeInt(2); // Type : FILE
+            out.writeUTF(signature);
+            out.writeUTF(fileName);
+
+            byte[] byteArray = new byte[1024*1024];
+            int count = 0;
+            while((count = fin.read(byteArray)) > 0){
+                out.write(byteArray, 0, count);
+            }
+            out.flush();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+//        fileOut;
+    }
+
     public void sendMessage(String message){
         try{
             String encryptedMessage = ChatUtil.encryptMessage(message, chatKey);
+            System.out.println(encryptedMessage);
+            out.writeInt(1); // Type : MESSAGE
             out.writeUTF(encryptedMessage);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    public void appendMSG(String cipherText){
+        try{
+            String plainText = ChatUtil.decryptMessage(cipherText, chatKey);
+            GUI.appendMSG(plainText);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-
+    public boolean isEmptyChatKey(){
+        return chatKey.isEmpty();
     }
 
     public void sendPublicKey() throws IOException {
+        out.writeInt(3); // Type : PublicKey
         out.writeUTF(serverPublicKey);
         System.out.println("Server : Send PublicKey");
     }
