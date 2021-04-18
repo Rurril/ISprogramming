@@ -2,11 +2,11 @@
 
 ## RSA-based Public Key Crypto System
 
-![](https://github.com/Rurril/ISprogramming/image/1.jpg)
-![](https://github.com/Rurril/ISprogramming/image/2.jpg)
-![](https://github.com/Rurril/ISprogramming/image/3.jpg)
-![](https://github.com/Rurril/ISprogramming/image/4.jpg)
-![](https://github.com/Rurril/ISprogramming/image/5.jpg)
-![](https://github.com/Rurril/ISprogramming/image/6.jpg)
-![](https://github.com/Rurril/ISprogramming/image/7.jpg)
-![](https://github.com/Rurril/ISprogramming/image/8.jpg)
+![](https://github.com/Rurril/ISprogramming/blob/master/image/1.jpg?raw=true)
+![](https://github.com/Rurril/ISprogramming/blob/master/image/2.jpg?raw=true)
+![](https://github.com/Rurril/ISprogramming/blob/master/image/3.jpg?raw=true)
+![](https://github.com/Rurril/ISprogramming/blob/master/image/4.jpg?raw=true)
+![](https://github.com/Rurril/ISprogramming/blob/master/image/5.jpg?raw=true)
+![](https://github.com/Rurril/ISprogramming/blob/master/image/6.jpg?raw=true)
+![](https://github.com/Rurril/ISprogramming/blob/master/image/7.jpg?raw=true)
+![](https://github.com/Rurril/ISprogramming/blob/master/image/8.jpg?raw=true)
