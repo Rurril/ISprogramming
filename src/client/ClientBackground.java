@@ -20,10 +20,6 @@ public class ClientBackground {
 
     private ClientGUI GUI; // GUI object
 
-    // GUI Part
-    JTextField field;
-    JTextArea chatArea;
-
     //Security
     private String clientPublicKey;
     private String clientPrivateKey;
@@ -34,12 +30,14 @@ public class ClientBackground {
         this.GUI = GUI;
     }
 
+    // For AES security to chat
     public void setSymmetricKey(String symmetricKey){
         // It means that you can send your message after encrypt the message
         this.chatKey = symmetricKey;
         GUI.enableInputField();
     }
 
+    // For RSA security and signature to transfer files
     public void setKeyPair() throws NoSuchAlgorithmException {
         HashMap<String, String> clientKeyPair = FIleUtil.generateKeyPair();
         clientPublicKey = clientKeyPair.get("publicKey");
@@ -60,7 +58,7 @@ public class ClientBackground {
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
 
-            // Initial transfer - symmetric key
+            // Initial transfer - symmetric key(AES)
             // For secure chatting
             out.writeUTF(chatKey);
 
@@ -78,10 +76,12 @@ public class ClientBackground {
 
                     if(serverPublicKey.isEmpty())return;
 
+                    // Verify signature
                     String signature = in.readUTF();
                     boolean isVerified = FIleUtil.verifySignarue("JINKWANJEON", signature, serverPublicKey);
                     System.out.println("Verify : " + isVerified);
 
+                    // If signature is verified -> get file
                     if(isVerified){
                         String fileName = in.readUTF();
                         FileOutputStream fout = new FileOutputStream("./clientFile/" + fileName);
@@ -101,9 +101,6 @@ public class ClientBackground {
 
             }
 
-//            Thread fileThread = new Thread(new ClientFileThread(socket, this));
-//            fileThread.start();
-
         }catch (ConnectException ce){
             ce.printStackTrace();
         }catch (Exception e){
@@ -111,21 +108,51 @@ public class ClientBackground {
         }
     }
 
+    // Function to Send File using RSA encryption
+    public void sendFile(String path, String fileName){
+        try {
+            File file = new File(path);
+            InputStream fin = new FileInputStream(file);
+
+            // For sign and verify
+            if(clientPrivateKey.isEmpty())return;
+
+            String signature = FIleUtil.sign("JINKWANJEON", clientPrivateKey);
+            System.out.println("Signature : " + signature);
+
+            out.writeInt(2); // Type : FILE
+            out.writeUTF(signature);
+            out.writeUTF(fileName);
+
+            byte[] byteArray = new byte[1024*1024];
+            int count = 0;
+            while((count = fin.read(byteArray)) > 0){
+                out.write(byteArray, 0, count);
+            }
+            out.flush();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Function to send Message Using AES encryption
     public void sendMessage(String message){
         try{
             String encryptedMessage = ChatUtil.encryptMessage(message, chatKey);
+            out.writeInt(1); // Type : MESSAGE
             out.writeUTF(encryptedMessage);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    // Function to send publickey to tranfer file
     public void sendPublicKey() throws IOException {
+        out.writeInt(3); // Type : PublicKey
         out.writeUTF(clientPublicKey);
         System.out.println("Client : Send PublicKey");
     }
 
-//    public static void main(String[] args) {
-//        ClientBackground clientBackground = new ClientBackground();
-//    }
+
 }

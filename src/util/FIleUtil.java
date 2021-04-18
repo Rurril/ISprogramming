@@ -92,7 +92,8 @@ public class FIleUtil {
             signature.update(plainText.getBytes("UTF-8"));
             byte[] bSignature = signature.sign();
             return Base64.getEncoder().encodeToString(bSignature);
-        } catch (NoSuchAlgorithmException | UnsupportedEncodingException | InvalidKeyException | SignatureException e) {
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException
+                | InvalidKeyException | SignatureException e) {
             throw new RuntimeException(e);
         }
     }

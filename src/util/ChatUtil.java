@@ -14,6 +14,7 @@ public class ChatUtil {
 
     private static final String CHAT_ALGORITHM = "AES";
 
+    // Generate AES key - for chatting function
     public static String generateKey() throws NoSuchAlgorithmException {
         KeyGenerator generator = KeyGenerator.getInstance(CHAT_ALGORITHM);
         generator.init(128);
@@ -53,37 +54,4 @@ public class ChatUtil {
 
         return ret;
     }
-
-    /*
-    public static void main(String[] args) throws Exception {
-
-        String text = "This is a plaintext for symmetric encryption test";
-        System.out.println("Plaintext: "+text);
-
-        System.out.println("\n\nAES Key Generation ");
-        KeyGenerator keyGen2 = KeyGenerator.getInstance("AES");
-        keyGen2.init(128);
-        Key key2 = keyGen2.generateKey();
-        byte[] printKey2 = key2.getEncoded();
-
-        for(byte b: printKey2) System.out.printf("%02X ", b);
-
-        System.out.println("\n\nAES Encryption ");
-        Cipher cipher2 = Cipher.getInstance("AES/ECB/PKCS5Padding");
-        cipher2.init(Cipher.ENCRYPT_MODE, key2);
-
-        String text2 = "test Text";
-        byte[] plaintext = text2.getBytes();
-
-        byte[] ciphertext2 = cipher2.doFinal(plaintext);
-        System.out.print("\nCiphertext :");
-        for(byte b: ciphertext2) System.out.printf("%02X ", b);
-
-        cipher2.init(Cipher.DECRYPT_MODE, key2);
-        byte[] decrypttext2 = cipher2.doFinal(ciphertext2);
-        String output2 = new String(decrypttext2, "UTF8");
-        System.out.print("\nDecrypted Text:" + output2);
-    }
-
-     */
 }

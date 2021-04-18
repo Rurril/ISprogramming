@@ -57,21 +57,45 @@ public class ServerBackground {
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
 
+            // Get symmetric key for chatting
             String key = in.readUTF();
             setSymmetricKey(key);
 
-            String cipherText;
-
             while(in != null){
-                cipherText = in.readUTF();
+                int type = in.readInt();
+                System.out.println("Type : " + type);
+                if(type == 1){ // CASE : MESSAGE
 
-                // No chatKey key -> means that you can not decrypt the message
-                if(isEmptyChatKey()){
-                    System.out.println("Server : There is no chatkey");
-                    continue;
+                    String cipherText = in.readUTF();
+                    String message = ChatUtil.decryptMessage(cipherText, chatKey);
+                    GUI.appendMSG(message);
+
+                }else if(type == 2){ // CASE : FILE
+
+                    if(clientPublicKey.isEmpty())return;
+
+                    // Verify signature
+                    String signature = in.readUTF();
+                    boolean isVerified = FIleUtil.verifySignarue("JINKWANJEON", signature, clientPublicKey);
+                    System.out.println("Verify : " + isVerified);
+
+                    // If signature is verified -> get file
+                    if(isVerified){
+                        String fileName = in.readUTF();
+                        FileOutputStream fout = new FileOutputStream("./serverFile/" + fileName);
+                        byte[] byteArray = new byte[1024*1024];
+                        int count = 0;
+                        System.out.println(fileName);
+
+                        while((count = in.read(byteArray)) > 0){
+                            fout.write(byteArray, 0, count);
+                        }
+                    }
+
+                }else if(type == 3){ // CASE : Client PublicKey
+                    clientPublicKey = in.readUTF();
+                    System.out.println("Client's public key : " + clientPublicKey);
                 }
-                // Decrypt cipherText to plainText & Append to chat area
-                appendMSG(cipherText);
             }
         }catch (Exception e){
             System.out.println(e);
@@ -79,6 +103,7 @@ public class ServerBackground {
 
     }
 
+    // Function to Send File using RSA encryption
     public void sendFile(String path, String fileName){
         try {
             File file = new File(path);
@@ -104,13 +129,12 @@ public class ServerBackground {
         } catch (IOException e) {
             e.printStackTrace();
         }
-//        fileOut;
     }
 
+    // Function to send Message Using AES encryption
     public void sendMessage(String message){
         try{
             String encryptedMessage = ChatUtil.encryptMessage(message, chatKey);
-            System.out.println(encryptedMessage);
             out.writeInt(1); // Type : MESSAGE
             out.writeUTF(encryptedMessage);
         } catch (Exception e) {
@@ -118,19 +142,7 @@ public class ServerBackground {
         }
     }
 
-    public void appendMSG(String cipherText){
-        try{
-            String plainText = ChatUtil.decryptMessage(cipherText, chatKey);
-            GUI.appendMSG(plainText);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-    }
-
-    public boolean isEmptyChatKey(){
-        return chatKey.isEmpty();
-    }
-
+    // Function to send publickey to tranfer file
     public void sendPublicKey() throws IOException {
         out.writeInt(3); // Type : PublicKey
         out.writeUTF(serverPublicKey);

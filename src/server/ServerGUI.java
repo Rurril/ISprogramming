@@ -12,7 +12,6 @@ public class ServerGUI extends JFrame implements ActionListener{
     // GUI Part
     private JTextField inputField;
     private JTextArea chatArea;
-    private JTextArea fileArea;
     private JTextArea connection;
     private JTextArea clientInfo;
     private ServerBackground sb;
@@ -28,8 +27,6 @@ public class ServerGUI extends JFrame implements ActionListener{
 
         chatArea = new JTextArea();
         chatArea.setEditable(false);
-        fileArea = new JTextArea();
-        fileArea.setEditable(false);
         inputField = new JTextField();
         inputField.setEnabled(false);
 
@@ -58,6 +55,7 @@ public class ServerGUI extends JFrame implements ActionListener{
         sendButton = new JButton("Send public key");
         sendButton.setEnabled(false);
         fileButton = new JButton("Send File");
+        fileButton.setEnabled(false);
 
         genButton.addActionListener(new ActionListener() {
             @Override
@@ -78,6 +76,7 @@ public class ServerGUI extends JFrame implements ActionListener{
             public void actionPerformed(ActionEvent e) {
                 try {
                     sb.sendPublicKey();
+                    fileButton.setEnabled(true);
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }
@@ -87,7 +86,7 @@ public class ServerGUI extends JFrame implements ActionListener{
         loadButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                loadDialog.setDirectory(System.getProperty("user.dir"));
+                loadDialog.setDirectory(System.getProperty("user.dir") +"/serverFile");
                 loadDialog.setVisible(true);
 
                 if(loadDialog.getFile() == null)return;
@@ -135,7 +134,7 @@ public class ServerGUI extends JFrame implements ActionListener{
         fileButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                loadDialog.setDirectory(System.getProperty("user.dir") + "/server");
+                loadDialog.setDirectory(System.getProperty("user.dir") + "/serverFile");
                 loadDialog.setVisible(true);
 
                 if(loadDialog.getFile() == null)return;
@@ -159,14 +158,12 @@ public class ServerGUI extends JFrame implements ActionListener{
         });
 
         JScrollPane scrollPane = new JScrollPane(chatArea);
-        JScrollPane scrollPane2 = new JScrollPane(fileArea);
 
         setVisible(true);
         setSize(600, 700);
         setLayout(null);
 
         add(scrollPane);
-        add(scrollPane2);
         add(inputField);
         add(connection);
         add(keyInfo); add(clientInfo);
@@ -178,14 +175,12 @@ public class ServerGUI extends JFrame implements ActionListener{
         connection.setBounds(10, 250, 600, 20);
 
         keyInfo.setBounds(10, 280, 600, 20);
-        clientInfo.setBounds(210, 330, 400, 30);
+        clientInfo.setBounds(210, 330, 400, 60);
         genButton.setBounds(10, 300, 200, 30);
         loadButton.setBounds(210, 300, 200, 30);
         saveButton.setBounds(410, 300, 200, 30);
         sendButton.setBounds(10, 330, 200, 30);
-        fileButton.setBounds(200, 600, 100, 30);
-
-        scrollPane2.setBounds(100, 370, 400, 200);
+        fileButton.setBounds(150, 400, 300, 30);
 
 
         sb.setGUI(this);
